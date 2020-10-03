@@ -1,0 +1,120 @@
+void TIM_Config(void)
+{
+	GPIO_InitTypeDef GPIO_InitStructure;
+	RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOA, ENABLE);
+	
+	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0|GPIO_Pin_1|GPIO_Pin_9|GPIO_Pin_10;
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;		
+    GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;	
+	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+    GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP ;
+	
+	GPIO_Init(GPIOA,&GPIO_InitStructure);
+	
+	GPIO_PinAFConfig(GPIOA, GPIO_PinSource0, GPIO_AF_2);
+	GPIO_PinAFConfig(GPIOA, GPIO_PinSource1, GPIO_AF_2);
+	GPIO_PinAFConfig(GPIOA, GPIO_PinSource9, GPIO_AF_2);
+	GPIO_PinAFConfig(GPIOA, GPIO_PinSource10, GPIO_AF_2);
+	
+}
+
+void TIM_PWM_Config(u16 arr,u16 psc)
+{
+	TIM_TimeBaseInitTypeDef TIM_TimeBaseStructure;
+	TIM_OCInitTypeDef  TIM_OCInitStructure;
+
+	RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM2 , ENABLE);
+	RCC_APB2PeriphClockCmd(RCC_APB2Periph_TIM1 , ENABLE);
+
+	TIM_TimeBaseStructure.TIM_Period = arr;         //2.初始化定时器相关配置
+	TIM_TimeBaseStructure.TIM_Prescaler = psc;      //2.初始化定时器相关配置
+	TIM_TimeBaseStructure.TIM_ClockDivision = 0;
+	TIM_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up;
+	TIM_TimeBaseStructure.TIM_RepetitionCounter = 0;
+	
+	TIM_TimeBaseInit(TIM1, &TIM_TimeBaseStructure);
+	TIM_TimeBaseInit(TIM2, &TIM_TimeBaseStructure);
+	
+	TIM_OCInitStructure.TIM_OCMode = TIM_OCMode_PWM1;									//选择PWM模式1 
+	TIM_OCInitStructure.TIM_OutputState = TIM_OutputState_Enable;			//比较输出使能
+	TIM_OCInitStructure.TIM_OCPolarity = TIM_OCPolarity_High;					//输出极性高
+	TIM_OCInitStructure.TIM_OCIdleState=TIM_OCIdleState_Set;        //死区后输出状态         
+ 
+	 TIM_OCInitStructure.TIM_Pulse = 0;
+ 
+	TIM_OC1Init(TIM2,&TIM_OCInitStructure);
+	TIM_OC2Init(TIM2,&TIM_OCInitStructure);
+	TIM_OC2Init(TIM1,&TIM_OCInitStructure);
+	TIM_OC3Init(TIM1,&TIM_OCInitStructure);
+	
+    TIM_CtrlPWMOutputs(TIM1, ENABLE);
+    TIM_Cmd(TIM1,ENABLE);
+	TIM_Cmd(TIM2,ENABLE);
+	
+}
+
+
+///*----------------------------------------------------
+//	函数功能：PWM输出初始化
+//----------------------------------------------------*/
+void PWM_Init(u16 arr,u16 psc)
+{
+		TIM_Config();
+		TIM_PWM_Config(arr, psc);			
+}
+
+/*------------------------------------------------
+	函数功能：电机1驱动
+	函数参数：val设置PWM占空比
+--------------------------------------------------*/
+void M1_SetSpeed(int PWM)
+{
+	if( PWM>POWER_MAX) PWM= POWER_MAX;
+	else if( PWM<0) PWM= 0;
+	TIM_SetCompare1(TIM2, PWM);
+}
+/*------------------------------------------------
+	函数功能：电机2驱动
+	函数参数：val设置PWM占空比
+--------------------------------------------------*/
+void M2_SetSpeed(int PWM)
+{
+	if( PWM>POWER_MAX) PWM= POWER_MAX;
+	else if( PWM<0) PWM= 0;
+	TIM_SetCompare2(TIM2,PWM);
+}
+/*------------------------------------------------
+	函数功能：电机3驱动
+	函数参数：val设置PWM占空比
+--------------------------------------------------*/
+void M3_SetSpeed(int val)
+{
+	if( val>POWER_MAX) val= POWER_MAX;
+	else if( val<0) val= 0;
+	TIM_SetCompare3(TIM1,val);
+}
+///*------------------------------------------------
+//	函数功能：电机4驱动
+//	函数参数：val设置PWM占空比
+//--------------------------------------------------*/
+void M4_SetSpeed(int val)
+{
+	if( val>POWER_MAX) val= POWER_MAX;
+	else if( val<0) val= 0;
+	TIM_SetCompare2(TIM1,val);
+} 
+
+
+///*-------------------------------
+//	函数功能：输出PWM
+//-------------------------------*/
+
+
+
+void Motor_Move( int pwm1,int pwm2 ,int pwm3,int pwm4)
+{			
+		M1_SetSpeed(pwm1);
+		M2_SetSpeed(pwm2);
+		M3_SetSpeed(pwm3);
+		M4_SetSpeed(pwm4);	
+}	
